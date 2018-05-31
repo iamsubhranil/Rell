@@ -1,0 +1,8 @@
+[package]
+name = "rell"
+version = "0.1.0"
+authors = ["Subhranil Mukherjee <subhranilmukherjee190@gmail.com>"]
+
+[dependencies]
+termios = "0.3.0"
+colored = "1.6"

@@ -1,20 +1,18 @@
-
-
-pub mod rell{
-    extern crate termios;
+pub mod rell {
     extern crate colored;
+    extern crate termios;
 
-    use std::io::*; 
-    use std::error::Error;
-    use std::result::Result;
-    use self::termios::{Termios, TCSANOW, ECHO, ICANON, tcsetattr};
     pub use self::colored::*;
+    use self::termios::{tcsetattr, Termios, ECHO, ICANON, TCSANOW};
     use std::collections::HashMap;
+    use std::error::Error;
+    use std::io::*;
+    use std::result::Result;
 
     type KeyFunction = Fn(&String, &mut bool) -> Result<(), Box<Error>>;
     type Key<'a> = (Color, &'a KeyFunction);
 
-    pub struct Rell<'a>{
+    pub struct Rell<'a> {
         line: String,
         curpos: u64,
         prompt: String,
@@ -23,8 +21,7 @@ pub mod rell{
         run: bool,
     }
 
-    impl<'a> Rell<'a>{
-
+    impl<'a> Rell<'a> {
         pub fn def_render(r: &mut Rell, buf: &char) -> Result<(), Box<Error>> {
             print!("\r{} ", r.prompt);
 
@@ -57,7 +54,7 @@ pub mod rell{
             let mut part = &r.line[oldi..];
             if cache.len() > 0 {
                 print!(" ");
-                part = &r.line[oldi+1..];
+                part = &r.line[oldi + 1..];
             }
 
             let word = part.trim();
@@ -80,45 +77,46 @@ pub mod rell{
             Ok(())
         }
 
-        pub fn def_help(_line : &String, _r: &mut bool) -> Result<(), Box<Error>>{
+        pub fn def_help(_line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
             println!("Welcome to help!");
             Ok(())
         }
 
-        pub fn def_unimpl(line : &String, _r: &mut bool) -> Result<(), Box<Error>>{
-            println!("{} not implemented yet!", 
-                     line.split_whitespace().next().unwrap()
-                     .bold());
+        pub fn def_unimpl(line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
+            println!(
+                "{} not implemented yet!",
+                line.split_whitespace().next().unwrap().bold()
+            );
             Ok(())
         }
 
         pub fn new(prompt: &str) -> Rell {
-            Rell { 
-                line: String::new(), curpos: 0, 
-                prompt: String::from(prompt), 
+            Rell {
+                line: String::new(),
+                curpos: 0,
+                prompt: String::from(prompt),
                 renderer: &Rell::def_render,
                 keywords: HashMap::new(),
                 run: true,
             }
         }
 
-        pub fn add_keyword(&mut self, keyword: &String, col: Color, func: &'a KeyFunction){
+        pub fn add_keyword(&mut self, keyword: &String, col: Color, func: &'a KeyFunction) {
             self.keywords.insert(keyword.clone(), (col, func));
         }
 
-        pub fn input(&mut self) -> Result<(), Box<Error>>{
+        pub fn input(&mut self) -> Result<(), Box<Error>> {
             print!("\n{} ", self.prompt);
             stdout().flush()?;
 
             let termios = Termios::from_fd(0).unwrap();
-            let mut new_termios = termios.clone();  // make a mutable copy of termios
-            // that we will modify
+            let mut new_termios = termios.clone(); // make a mutable copy of termios
+                                                   // that we will modify
             new_termios.c_lflag &= !(ICANON | ECHO); // no echo and canonical mode
             tcsetattr(0, TCSANOW, &mut new_termios).unwrap();
 
             while self.run {
-
-                let mut buf = [0;1];
+                let mut buf = [0; 1];
                 stdin().read_exact(&mut buf).unwrap();
 
                 //print!("{}", buf[0] as char);
@@ -133,11 +131,15 @@ pub mod rell{
                     match self.keywords.get(word) {
                         Some(s) => (s.1)(&self.line, &mut self.run),
                         _ => {
-                            print!("{} No such command : {}", "[Error]".red().bold(), word.bold());
+                            print!(
+                                "{} No such command : {}",
+                                "[Error]".red().bold(),
+                                word.bold()
+                            );
                             Ok(())
                         }
                     }?;
-                    
+
                     if self.run {
                         print!("\n{} ", self.prompt);
                         stdout().flush()?;
@@ -149,11 +151,10 @@ pub mod rell{
                 //println!("Looping..");
             }
 
-            tcsetattr(0, TCSANOW, & termios).unwrap();
+            tcsetattr(0, TCSANOW, &termios).unwrap();
 
             Ok(())
         }
-
     }
 
 }

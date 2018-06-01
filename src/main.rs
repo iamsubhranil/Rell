@@ -1,17 +1,17 @@
-extern crate rell;
 extern crate colored;
+extern crate rell;
 
-use rell::rell::Rell;
 use colored::Color;
-use std::result::Result;
+use rell::rell::Rell;
 use std::error::Error;
 use std::io;
+use std::result::Result;
 
-fn myfn(line: &String, _r: &mut bool) -> Result<(), Box<Error>>  {
+fn myfn(line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
     print!("\nGiven arguments : ");
     for (_i, item) in line.split_whitespace().enumerate() {
         print!("{} ", item);
-    };
+    }
 
     Ok(())
 }
@@ -20,8 +20,7 @@ fn efn(_line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
     Err(Box::from(io::Error::from(io::ErrorKind::InvalidInput)))
 }
 
-fn main(){
-    
+fn main() {
     let mut r = Rell::new(">>");
     r.add_keyword(&String::from("help"), Color::Green, &Rell::def_help);
     r.add_keyword(&String::from("load"), Color::Blue, &myfn);
@@ -30,5 +29,4 @@ fn main(){
     if let Err(e) = r.input() {
         println!("REPL closed due to the following error :\n{}", e);
     }
-
 }

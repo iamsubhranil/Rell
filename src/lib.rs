@@ -11,7 +11,7 @@ pub mod rell{
     pub use self::colored::*;
     use std::collections::HashMap;
 
-    type KeyFunction = Fn(&String) -> Result<(), Box<Error>>;
+    type KeyFunction = Fn(&String, &mut bool) -> Result<(), Box<Error>>;
     type Key<'a> = (Color, &'a KeyFunction);
 
     pub struct Rell<'a>{
@@ -20,6 +20,7 @@ pub mod rell{
         prompt: String,
         renderer: &'a Fn(&mut Rell, &char) -> Result<(), Box<Error>>,
         keywords: HashMap<String, Key<'a>>,
+        run: bool,
     }
 
     impl<'a> Rell<'a>{
@@ -58,7 +59,6 @@ pub mod rell{
                 print!(" ");
                 part = &r.line[oldi+1..];
             }
-            //let part = &line[oldi..];
 
             let word = part.trim();
 
@@ -75,12 +75,17 @@ pub mod rell{
             Ok(())
         }
 
-        pub fn def_help(_line : &String) -> Result<(), Box<Error>>{
+        pub fn def_exit(_line: &String, r: &mut bool) -> Result<(), Box<Error>> {
+            *r = false;
+            Ok(())
+        }
+
+        pub fn def_help(_line : &String, _r: &mut bool) -> Result<(), Box<Error>>{
             println!("Welcome to help!");
             Ok(())
         }
 
-        pub fn def_unimpl(line : &String) -> Result<(), Box<Error>>{
+        pub fn def_unimpl(line : &String, _r: &mut bool) -> Result<(), Box<Error>>{
             println!("{} not implemented yet!", 
                      line.split_whitespace().next().unwrap()
                      .bold());
@@ -92,7 +97,8 @@ pub mod rell{
                 line: String::new(), curpos: 0, 
                 prompt: String::from(prompt), 
                 renderer: &Rell::def_render,
-                keywords: HashMap::new()
+                keywords: HashMap::new(),
+                run: true,
             }
         }
 
@@ -110,7 +116,7 @@ pub mod rell{
             new_termios.c_lflag &= !(ICANON | ECHO); // no echo and canonical mode
             tcsetattr(0, TCSANOW, &mut new_termios).unwrap();
 
-            loop{
+            while self.run {
 
                 let mut buf = [0;1];
                 stdin().read_exact(&mut buf).unwrap();
@@ -125,13 +131,18 @@ pub mod rell{
                     let word = c.split_whitespace().next().unwrap();
 
                     match self.keywords.get(word) {
-                        Some(s) => (s.1)(&self.line),
-                        _ => break,
-                    };
-
-                    print!("\n{} ", self.prompt);
-                    stdout().flush()?;
-                    self.line.clear();
+                        Some(s) => (s.1)(&self.line, &mut self.run),
+                        _ => {
+                            print!("{} No such command : {}", "[Error]".red().bold(), word.bold());
+                            Ok(())
+                        }
+                    }?;
+                    
+                    if self.run {
+                        print!("\n{} ", self.prompt);
+                        stdout().flush()?;
+                        self.line.clear();
+                    }
                 }
 
                 //self.size = 0;

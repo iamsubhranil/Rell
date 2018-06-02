@@ -127,7 +127,13 @@ pub mod rell {
         }
 
         fn get_func(&mut self) -> &'a RellKeyFunction {
-            let word = self.line.split_whitespace().next().unwrap();
+            if self.line.eq("\n") {
+                return &Rell::def_func;
+            }
+            let word = self.line.split_whitespace().next().unwrap_or_default();
+            if word.len() == 0 {
+                return &Rell::def_func;
+            }
             match self.keywords.get(word) {
                 Some(s) => return s.1,
                 _ => {

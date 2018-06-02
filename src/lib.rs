@@ -9,16 +9,16 @@ pub mod rell {
     use std::io::*;
     use std::result::Result;
 
-    type RellKeyFunction = Fn(&String, &mut bool) -> Result<(), Box<Error>>;
-    type RellKey<'a> = (Color, &'a RellKeyFunction);
+    type RellKeyFunction = Fn(&mut Rell) -> Result<(), Box<Error>>;
+    type RellKey<'a> = (Color, &'a RellKeyFunction, String);
 
     pub struct Rell<'a> {
-        line: String,
-        curpos: u64,
-        prompt: String,
-        renderer: &'a Fn(&mut Rell, &char) -> Result<(), Box<Error>>,
-        keywords: HashMap<String, RellKey<'a>>,
-        run: bool,
+        pub line: String,
+        pub curpos: u64,
+        pub prompt: String,
+        pub renderer: &'a Fn(&mut Rell, &char) -> Result<(), Box<Error>>,
+        pub keywords: HashMap<String, RellKey<'a>>,
+        pub run: bool,
     }
 
     impl<'a> Rell<'a> {
@@ -78,20 +78,25 @@ pub mod rell {
             Ok(())
         }
 
-        pub fn def_exit(_line: &String, r: &mut bool) -> Result<(), Box<Error>> {
-            *r = false;
+        pub fn def_exit(r: &mut Rell) -> Result<(), Box<Error>> {
+            r.run = false;
             Ok(())
         }
 
-        pub fn def_help(_line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
+        pub fn def_help(r: &mut Rell) -> Result<(), Box<Error>> {
             println!("Welcome to help!");
+            println!("{}", "Keywords".bold());
+            print!("========");
+            for (kw, ac) in r.keywords.iter() {
+                print!("\n{}\t-- {}", kw, ac.2);
+            }
             Ok(())
         }
 
-        pub fn def_unimpl(line: &String, _r: &mut bool) -> Result<(), Box<Error>> {
-            println!(
-                "{} not implemented yet!",
-                line.split_whitespace().next().unwrap().bold()
+        pub fn def_unimpl(r: &mut Rell) -> Result<(), Box<Error>> {
+            print!(
+                "{} is not implemented yet!",
+                r.line.split_whitespace().next().unwrap().bold()
             );
             Ok(())
         }
@@ -107,8 +112,33 @@ pub mod rell {
             }
         }
 
-        pub fn add_keyword(&mut self, keyword: &String, col: Color, func: &'a RellKeyFunction) {
-            self.keywords.insert(keyword.clone(), (col, func));
+        pub fn add_keyword(
+            &mut self,
+            keyword: String,
+            col: Color,
+            func: &'a RellKeyFunction,
+            desc: String,
+        ) {
+            self.keywords.insert(keyword, (col, func, desc));
+        }
+
+        fn def_func(_r: &mut Rell) -> Result<(), Box<Error>> {
+            Ok(())
+        }
+
+        fn get_func(&mut self) -> &'a RellKeyFunction {
+            let word = self.line.split_whitespace().next().unwrap();
+            match self.keywords.get(word) {
+                Some(s) => return s.1,
+                _ => {
+                    print!(
+                        "{} No such command : {}",
+                        "[Error]".red().bold(),
+                        (&word).bold()
+                    );
+                    return &Rell::def_func;
+                }
+            };
         }
 
         pub fn input(&mut self) -> Result<(), Box<Error>> {
@@ -131,20 +161,8 @@ pub mod rell {
                 (self.renderer)(self, &(buf[0] as char))?;
 
                 if buf[0] == '\n' as u8 {
-                    let c = self.line.clone();
-                    let word = c.split_whitespace().next().unwrap();
-
-                    match self.keywords.get(word) {
-                        Some(s) => (s.1)(&self.line, &mut self.run),
-                        _ => {
-                            print!(
-                                "{} No such command : {}",
-                                "[Error]".red().bold(),
-                                word.bold()
-                            );
-                            Ok(())
-                        }
-                    }?;
+                    let func = Rell::get_func(self);
+                    func(self)?;
 
                     if self.run {
                         print!("\n{} ", self.prompt);

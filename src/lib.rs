@@ -9,15 +9,15 @@ pub mod rell {
     use std::io::*;
     use std::result::Result;
 
-    type KeyFunction = Fn(&String, &mut bool) -> Result<(), Box<Error>>;
-    type Key<'a> = (Color, &'a KeyFunction);
+    type RellKeyFunction = Fn(&String, &mut bool) -> Result<(), Box<Error>>;
+    type RellKey<'a> = (Color, &'a RellKeyFunction);
 
     pub struct Rell<'a> {
         line: String,
         curpos: u64,
         prompt: String,
         renderer: &'a Fn(&mut Rell, &char) -> Result<(), Box<Error>>,
-        keywords: HashMap<String, Key<'a>>,
+        keywords: HashMap<String, RellKey<'a>>,
         run: bool,
     }
 
@@ -107,7 +107,7 @@ pub mod rell {
             }
         }
 
-        pub fn add_keyword(&mut self, keyword: &String, col: Color, func: &'a KeyFunction) {
+        pub fn add_keyword(&mut self, keyword: &String, col: Color, func: &'a RellKeyFunction) {
             self.keywords.insert(keyword.clone(), (col, func));
         }
 

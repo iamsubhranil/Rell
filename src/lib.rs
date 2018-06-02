@@ -24,10 +24,10 @@ pub mod rell {
     impl<'a> Rell<'a> {
         pub fn def_render(r: &mut Rell, buf: &char) -> Result<(), Box<Error>> {
             print!("\r{} ", r.prompt);
-
             r.line.push(*buf);
 
             let mut oldi = 0;
+            let mut coldone = 0;
             let mut cache: Vec<u8> = Vec::new();
             cache.clear();
 
@@ -43,11 +43,13 @@ pub mod rell {
                             print!("{}", part.color(s.0));
                         }
                         _ => {
-                            print!("{}", &part);
+                            print!("{}", part.red());
                         }
                     }
                     oldi = i;
                     cache.push(b' ');
+                    coldone = 1;
+                    break;
                 }
             }
 
@@ -59,13 +61,17 @@ pub mod rell {
 
             let word = part.trim();
 
-            match r.keywords.get(word) {
-                Some(s) => {
-                    print!("{}", part.color(s.0));
+            if coldone == 0 {
+                match r.keywords.get(word) {
+                    Some(s) => {
+                        print!("{}", part.color(s.0));
+                    }
+                    _ => {
+                        print!("{}", part.red());
+                    }
                 }
-                _ => {
-                    print!("{}", &part);
-                }
+            } else {
+                print!("{}", &part);
             }
 
             stdout().flush()?;

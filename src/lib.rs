@@ -9,7 +9,7 @@ pub mod rell {
     use std::io::*;
     use std::result::Result;
 
-    type RellKeyFunction = Fn(&mut Rell) -> Result<(), Box<Error>>;
+    type RellKeyFunction = Fn(&mut Rell);
     type RellKey<'a> = (Color, &'a RellKeyFunction, String);
 
     pub struct Rell<'a> {
@@ -78,27 +78,24 @@ pub mod rell {
             Ok(())
         }
 
-        pub fn def_exit(r: &mut Rell) -> Result<(), Box<Error>> {
+        pub fn def_exit(r: &mut Rell) {
             r.run = false;
-            Ok(())
         }
 
-        pub fn def_help(r: &mut Rell) -> Result<(), Box<Error>> {
+        pub fn def_help(r: &mut Rell) {
             println!("Welcome to help!");
             println!("{}", "Keywords".bold());
             print!("========");
             for (kw, ac) in r.keywords.iter() {
                 print!("\n{}\t-- {}", kw, ac.2);
             }
-            Ok(())
         }
 
-        pub fn def_unimpl(r: &mut Rell) -> Result<(), Box<Error>> {
+        pub fn def_unimpl(r: &mut Rell) {
             print!(
                 "{} is not implemented yet!",
                 r.line.split_whitespace().next().unwrap().bold()
             );
-            Ok(())
         }
 
         pub fn new(prompt: &str) -> Rell {
@@ -122,9 +119,7 @@ pub mod rell {
             self.keywords.insert(keyword, (col, func, desc));
         }
 
-        fn def_func(_r: &mut Rell) -> Result<(), Box<Error>> {
-            Ok(())
-        }
+        fn def_func(_r: &mut Rell) {}
 
         fn get_func(&mut self) -> &'a RellKeyFunction {
             if self.line.eq("\n") {
@@ -168,7 +163,7 @@ pub mod rell {
 
                 if buf[0] == '\n' as u8 {
                     let func = Rell::get_func(self);
-                    func(self)?;
+                    func(self);
 
                     if self.run {
                         print!("\n{} ", self.prompt);

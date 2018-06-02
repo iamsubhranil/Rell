@@ -3,30 +3,28 @@ extern crate rell;
 
 use colored::*;
 use rell::rell::Rell;
-use std::error::Error;
-use std::io;
-use std::result::Result;
 
-fn myfn(r: &mut Rell) -> Result<(), Box<Error>> {
+fn myfn(r: &mut Rell) {
     print!("Given arguments : ");
     for (_i, item) in r.line.split_whitespace().enumerate() {
         print!("{} ", item);
     }
-
-    Ok(())
 }
 
-fn efn(_r: &mut Rell) -> Result<(), Box<Error>> {
-    Err(Box::from(io::Error::from(io::ErrorKind::InvalidInput)))
+fn efn(r: &mut Rell) {
+    print!(
+        "{} Terminating due to an unrecoverable error!\n",
+        "[Error]".red().bold()
+    );
+    r.run = false;
 }
 
-fn change_prompt(r: &mut Rell) -> Result<(), Box<Error>> {
+fn change_prompt(r: &mut Rell) {
     let mut sws = r.line.split_whitespace();
     match sws.nth(1) {
         Some(s) => r.prompt = s.to_string(),
         _ => print!("{} Enter a new sign to set as prompt!", "Error".bold()),
     }
-    Ok(())
 }
 
 fn main() {

@@ -1,7 +1,7 @@
 extern crate colored;
 extern crate rell;
 
-use colored::Color;
+use colored::*;
 use rell::rell::Rell;
 use std::error::Error;
 use std::io;
@@ -18,6 +18,15 @@ fn myfn(r: &mut Rell) -> Result<(), Box<Error>> {
 
 fn efn(_r: &mut Rell) -> Result<(), Box<Error>> {
     Err(Box::from(io::Error::from(io::ErrorKind::InvalidInput)))
+}
+
+fn change_prompt(r: &mut Rell) -> Result<(), Box<Error>> {
+    let mut sws = r.line.split_whitespace();
+    match sws.nth(1) {
+        Some(s) => r.prompt = s.to_string(),
+        _ => print!("{} Enter a new sign to set as prompt!", "Error".bold()),
+    }
+    Ok(())
 }
 
 fn main() {
@@ -51,6 +60,12 @@ fn main() {
         Color::Green,
         &Rell::def_unimpl,
         String::from("Test an unimplemented function"),
+    );
+    r.add_keyword(
+        String::from("prompt"),
+        Color::Green,
+        &change_prompt,
+        String::from("Change the prompt"),
     );
     if let Err(e) = r.input() {
         println!("REPL closed due to the following error :\n{}", e);
